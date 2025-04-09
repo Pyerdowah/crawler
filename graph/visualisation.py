@@ -18,3 +18,26 @@ def visualize_graph(G, limit=500, seed=42):
     plt.axis('off')
     plt.tight_layout()
     plt.show()
+
+
+def visualize_scc_graph(G_scc):
+    sizes = [len(G_scc.nodes[n]['members']) * 10 for n in G_scc.nodes]
+
+    plt.figure(figsize=(12, 10))
+    pos = nx.kamada_kawai_layout(G_scc)
+
+    nx.draw_networkx_nodes(G_scc, pos,
+                           node_size=sizes,
+                           node_color='skyblue',
+                           alpha=0.8,
+                           linewidths=0.5,
+                           edgecolors='gray')
+
+    nx.draw_networkx_edges(G_scc, pos,
+                           arrows=True,
+                           alpha=0.4)
+
+    plt.title("Graf SCC (kondensacja silnie spójnych składowych)")
+    plt.axis('off')
+    plt.tight_layout()
+    plt.show()
