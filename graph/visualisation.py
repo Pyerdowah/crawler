@@ -9,7 +9,7 @@ def visualize_graph(G, limit=500, seed=42):
     H = G.subgraph(subgraph_nodes)
 
     plt.figure(figsize=(12, 12))
-    pos = nx.spring_layout(H, seed=seed)
+    pos = nx.kamada_kawai_layout(H)
 
     nx.draw_networkx_nodes(H, pos, node_size=50, node_color='skyblue')
     nx.draw_networkx_edges(H, pos, alpha=0.3)

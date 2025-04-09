@@ -4,7 +4,7 @@ from graph.builder import build_graph
 import pickle
 from graph.visualisation import visualize_graph
 
-def benchmark(base_url, max_pages=200, thread_options=[1, 2, 4, 8, 16]):
+def test_on_threads(base_url, max_pages=200, thread_options=[1, 2, 4, 8, 16]):
     results = []
 
     for threads in thread_options:
@@ -21,10 +21,10 @@ def benchmark(base_url, max_pages=200, thread_options=[1, 2, 4, 8, 16]):
 
     return results
 
-url = "https://www.upv.es/"
-# G = build_graph(url, max_pages=300, num_threads=10)
-# print(f"Pobrano graf: {G.number_of_nodes()} wierzchołków, {G.number_of_edges()} krawędzi.")
-# with open("data/graph.gpickle", "wb") as f:
-#     pickle.dump(G, f)
-# visualize_graph(G)
-benchmark(url, max_pages=50)
+url = "https://www.um.edu.mt/"
+G = build_graph(url, max_pages=3000, num_threads=16)
+time.sleep(10)
+print(f"Pobrano graf: {G.number_of_nodes()} wierzchołków, {G.number_of_edges()} krawędzi.")
+with open("data/graph.gpickle", "wb") as f:
+    pickle.dump(G, f)
+visualize_graph(G)
