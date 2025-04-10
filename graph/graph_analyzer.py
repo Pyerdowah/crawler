@@ -7,6 +7,7 @@ from collections import Counter
 from scipy.stats import linregress
 import random
 
+from graph.custom_pagerank import custom_pagerank
 from graph.visualisation import visualize_scc_graph
 
 
@@ -240,5 +241,42 @@ def analyze_vertex_connectivity(G):
         print(f"   Przykładowe pary rozspajające: {cut_pairs}")
     else:
         print(" - Graf ma spójność ≥ 3 → brak rozspajających pojedynczych/podwójnych.")
+
+def analyze_pagerank_distribution(pr_dict, title="Rozkład PageRank"):
+    import matplotlib.pyplot as plt
+    from collections import Counter
+    from scipy.stats import linregress
+    import numpy as np
+
+    values = sorted(pr_dict.values(), reverse=True)
+    ranks = list(range(1, len(values) + 1))
+
+    plt.figure()
+    plt.loglog(ranks, values, marker='o', linestyle='None')
+    plt.title(title)
+    plt.xlabel("Ranga")
+    plt.ylabel("PageRank")
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
+    # Regresja log-log
+    log_x = np.log10(ranks)
+    log_y = np.log10(values)
+    slope, intercept, r_value, _, _ = linregress(log_x, log_y)
+    print(f" - Regresja log-log: y ~ x^{slope:.2f}, R² = {r_value**2:.3f}")
+
+def pagerank_convergence_study(G, d_values=[0.6, 0.75, 0.85, 0.95, 1.0]):
+    print("\n🔁 Zbieżność PageRank dla różnych współczynników tłumienia:")
+    for d in d_values:
+        print(f"\nDamping = {d}")
+        pr = custom_pagerank(G, d=d, verbose=True)
+        top = sorted(pr.items(), key=lambda x: x[1], reverse=True)[:5]
+        print("Top 5 stron:")
+        for node, val in top:
+            print(f"  {node[:60]}... : {val:.4e}")
+        analyze_pagerank_distribution(pr, title=f"PageRank (d={d})")
+
+
 
 
