@@ -1,3 +1,5 @@
+from itertools import combinations
+
 import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
@@ -5,108 +7,8 @@ from collections import Counter
 from scipy.stats import linregress
 import random
 
-def analyze_graph(G):
-    print("📊 Podstawowe informacje:")
-    print(f" - Wierzchołki: {G.number_of_nodes()}")
-    print(f" - Krawędzie: {G.number_of_edges()}")
+from graph.visualisation import visualize_scc_graph
 
-    print("\n🔄 Składowe spójności:")
-    print(f" - Liczba słabych składowych spójności (WCC): {nx.number_weakly_connected_components(G)}")
-    print(f" - Liczba silnych składowych spójności (SCC): {nx.number_strongly_connected_components(G)}")
-
-    largest_scc = max(nx.strongly_connected_components(G), key=len)
-    print(f" - Rozmiar największej SCC: {len(largest_scc)}")
-
-    print("\n📈 Rozkłady stopni:")
-    in_degrees = dict(G.in_degree())
-    out_degrees = dict(G.out_degree())
-    _plot_degree_distribution(list(in_degrees.values()), "In-degree")
-    _plot_degree_distribution(list(out_degrees.values()), "Out-degree")
-
-    print("\n📐 Najkrótsze ścieżki (w największej SCC):")
-    H = G.subgraph(largest_scc).copy()
-    lengths = dict(nx.all_pairs_shortest_path_length(H))
-    path_lengths = [l for d in lengths.values() for l in d.values()]
-    avg_distance = np.mean(path_lengths)
-    diameter = max(path_lengths)
-    print(f" - Średnia długość ścieżki: {avg_distance:.2f}")
-    print(f" - Średnica: {diameter}")
-    _plot_histogram(path_lengths, "Długości ścieżek (SCC)")
-
-    print("\n🔗 Klasteryzacja:")
-    clustering = nx.clustering(H.to_undirected())
-    avg_clustering = np.mean(list(clustering.values()))
-    print(f" - Średni współczynnik klasteryzacji: {avg_clustering:.4f}")
-    _plot_histogram(list(clustering.values()), "Klasteryzacja lokalna")
-
-    print("\n🛡️ Odporność na awarie i ataki:")
-    _simulate_failures_and_attacks(G)
-
-    print("\n🔍 Spójność wierzchołkowa:")
-    if nx.is_connected(G.to_undirected()):
-        print(" - Graf jest spójny (1-spójny)")
-        ap = list(nx.articulation_points(G.to_undirected()))
-        print(f" - Punkty artykulacji: {len(ap)}")
-    else:
-        print(" - Graf NIE jest spójny. Szukam par rozspajających...")
-        try:
-            nc = nx.node_connectivity(G.to_undirected())
-            print(f" - Spójność wierzchołkowa: {nc}")
-        except Exception as e:
-            print(f" - Nie udało się policzyć: {e}")
-
-
-def _plot_degree_distribution(degrees, label):
-    counts = Counter(degrees)
-    x_vals, y_vals = zip(*sorted(counts.items()))
-    x = []
-    y = []
-    for xi, yi in zip(x_vals, y_vals):
-        if xi > 0 and yi > 0:
-            x.append(xi)
-            y.append(yi)
-
-    plt.figure()
-    plt.loglog(x, y, marker='o', linestyle='None')
-    plt.title(f"Rozkład stopni: {label}")
-    plt.xlabel("Stopień")
-    plt.ylabel("Liczba wierzchołków")
-    plt.grid(True)
-    plt.show()
-
-    if len(x) >= 2:
-        log_x = np.log10(x)
-        log_y = np.log10(y)
-        slope, intercept, r_value, _, _ = linregress(log_x, log_y)
-        print(f" - {label} ~ x^{slope:.2f}, R²={r_value ** 2:.2f}")
-    else:
-        print(f" - {label}: zbyt mało danych do regresji.")
-
-
-def _plot_histogram(data, title):
-    plt.figure()
-    plt.hist(data, bins=30)
-    plt.title(title)
-    plt.xlabel("Wartość")
-    plt.ylabel("Liczba wystąpień")
-    plt.grid(True)
-    plt.show()
-
-def _simulate_failures_and_attacks(G, remove_frac=0.1):
-    N = G.number_of_nodes()
-    n_remove = int(N * remove_frac)
-
-    print(f" - Symuluję awarię (losowe usunięcie {n_remove} wierzchołków)...")
-    random_nodes = random.sample(list(G.nodes()), n_remove)
-    G_fail = G.copy()
-    G_fail.remove_nodes_from(random_nodes)
-    print(f"   Po awarii - WCC: {nx.number_weakly_connected_components(G_fail)}, SCC: {nx.number_strongly_connected_components(G_fail)}")
-
-    print(f" - Symuluję atak (usunięcie top {n_remove} wierzchołków o najwyższym stopniu)...")
-    high_degree_nodes = sorted(G.degree, key=lambda x: x[1], reverse=True)[:n_remove]
-    G_attack = G.copy()
-    G_attack.remove_nodes_from([n for n, _ in high_degree_nodes])
-    print(f"   Po ataku - WCC: {nx.number_weakly_connected_components(G_attack)}, SCC: {nx.number_strongly_connected_components(G_attack)}")
 
 def analyze_connectivity_components(G):
     print("\n🧩 Analiza składowych spójności")
@@ -148,6 +50,7 @@ def analyze_connectivity_components(G):
     G_scc = nx.condensation(G, scc=list(nx.strongly_connected_components(G)))
     print(f" - Wierzchołki w G_SCC (grafie kondensacji): {G_scc.number_of_nodes()}")
     print(f" - Krawędzie w G_SCC: {G_scc.number_of_edges()}")
+    visualize_scc_graph(G_scc)
 
     return {
         'wcc_count': len(wcc),
@@ -255,5 +158,87 @@ def analyze_shortest_paths(G):
         'avg_dists': node_avg_dists,
         'radii': node_radii
     }
+
+def analyze_clustering(G):
+    print("\n🔗 Współczynniki klasteryzacji:")
+
+    UG = G.to_undirected()
+    clustering = nx.clustering(UG)
+    values = list(clustering.values())
+
+    global_clustering = nx.average_clustering(UG)
+    print(f" - Globalna klasteryzacja: {global_clustering:.4f}")
+    print(f" - Liczba wierzchołków z C > 0: {sum(c > 0 for c in values)}")
+
+    # Histogram lokalnych wartości
+    plt.figure()
+    plt.hist(values, bins=30)
+    plt.title("Histogram lokalnych współczynników klasteryzacji")
+    plt.xlabel("Współczynnik klasteryzacji")
+    plt.ylabel("Liczba wierzchołków")
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
+    # Przygotowanie do regresji — histogram (binning) wartości > 0
+    nonzero = [v for v in values if v > 0]
+    bins = np.linspace(0.01, 1.0, 30)
+    hist, edges = np.histogram(nonzero, bins=bins)
+
+    x_vals = 0.5 * (edges[:-1] + edges[1:])
+    y_vals = hist
+
+    mask = (y_vals > 0)
+    log_x = np.log10(x_vals[mask])
+    log_y = np.log10(y_vals[mask])
+
+    if len(log_x) > 1:
+        slope, intercept, r_value, _, _ = linregress(log_x, log_y)
+        print(f" - Regresja histogramu klasteryzacji: x^{slope:.2f}, R²={r_value**2:.2f}")
+
+        # Wykres log-log histogramu z regresją
+        plt.figure()
+        plt.loglog(x_vals[mask], y_vals[mask], 'o', label='Dane')
+        plt.loglog(x_vals[mask], 10**(intercept + slope * log_x), label=f'Regresja: x^{slope:.2f}')
+        plt.title("Rozkład lokalnej klasteryzacji (log-log)")
+        plt.xlabel("Współczynnik klasteryzacji")
+        plt.ylabel("Liczba wierzchołków")
+        plt.legend()
+        plt.grid(True, which="both", ls="--")
+        plt.tight_layout()
+        plt.show()
+    else:
+        print(" - Za mało danych do regresji klasteryzacji.")
+
+def analyze_vertex_connectivity(G):
+    print("\n🧩 Spójność wierzchołkowa:")
+
+    UG = G.to_undirected()
+    if not nx.is_connected(UG):
+        print(" - Graf niespójny → brak sensu szukać rozspajających wierzchołków.")
+        return
+
+    connectivity = nx.node_connectivity(UG)
+    print(f" - Spójność wierzchołkowa: {connectivity}")
+
+    if connectivity == 1:
+        print(" - Szukanie wierzchołków rozspajających (punkty artykulacji)...")
+        articulation = list(nx.articulation_points(UG))
+        print(f"   Znaleziono {len(articulation)} punktów artykulacji.")
+        print("   Przykład:", articulation[:5])
+    elif connectivity == 2:
+        print(" - Szukanie par wierzchołków rozspajających (może być kosztowne)...")
+        cut_pairs = []
+        nodes = list(UG.nodes())
+        for u, v in combinations(nodes, 2):
+            UG_copy = UG.copy()
+            UG_copy.remove_nodes_from([u, v])
+            if not nx.is_connected(UG_copy):
+                cut_pairs.append((u, v))
+                if len(cut_pairs) >= 5:
+                    break
+        print(f"   Przykładowe pary rozspajające: {cut_pairs}")
+    else:
+        print(" - Graf ma spójność ≥ 3 → brak rozspajających pojedynczych/podwójnych.")
 
 
