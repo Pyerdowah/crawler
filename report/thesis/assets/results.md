@@ -1,4 +1,4 @@
-Crawling: 3011it [11:08,  4.50it/s]
+<!-- Crawling: 3011it [11:08,  4.50it/s]
 Page limit reached, and threads finished. Exiting.
 Pobrano graf: 3011 wierzchołków, 309748 krawędzi.
 
@@ -19,39 +19,39 @@ Pobrano graf: 3011 wierzchołków, 309748 krawędzi.
  - Wierzchołki w G_SCC (grafie kondensacji): 1677
  - Krawędzie w G_SCC: 8280
 
-![img_5.png](img_5.png)
+![img_5.png](img_5.png) -->
 
-📊 Rozkłady stopni (log-log + regresja):
+<!-- 📊 Rozkłady stopni (log-log + regresja):
  - In-degree: y = x^-0.43, R² = 0.361
 
 ![img_6.png](img_6.png)
  - Out-degree: y = x^0.34, R² = 0.069
 
-![img_7.png](img_7.png)
+![img_7.png](img_7.png) -->
 
-🧭 Analiza najkrótszych ścieżek (dla największej SCC):
+<!-- 🧭 Analiza najkrótszych ścieżek (dla największej SCC):
  - Średnia odległość (dla SCC): 2.67
  - Średnica (diameter): 7
  - Regresja histogramu (średnie odległości): x^-9.23, R²=0.76
 
 ![img_8.png](img_8.png)
-![img_9.png](img_9.png)
+![img_9.png](img_9.png) -->
 
-🔗 Współczynniki klasteryzacji:
+<!-- 🔗 Współczynniki klasteryzacji:
  - Globalna klasteryzacja: 0.6949
  - Liczba wierzchołków z C > 0: 3008
  - Regresja histogramu klasteryzacji: x^0.37, R²=0.03
 
 ![img_10.png](img_10.png)
-![img_11.png](img_11.png)
+![img_11.png](img_11.png) -->
 
-🧩 Spójność wierzchołkowa:
+<!-- 🧩 Spójność wierzchołkowa:
  - Spójność wierzchołkowa: 1
  - Szukanie wierzchołków rozspajających (punkty artykulacji)...
    Znaleziono 2 punktów artykulacji.
-   Przykład: ['https://www.um.edu.mt/research/ethics/researchethicsatum/', 'https://www.um.edu.mt/']
+   Przykład: ['https://www.um.edu.mt/research/ethics/researchethicsatum/', 'https://www.um.edu.mt/'] -->
 
-# Awaria - usunięcie 10% losowych stron
+<!-- # Awaria - usunięcie 10% losowych stron
 
 Pobrano graf: 2710 wierzchołków, 253956 krawędzi.
 
@@ -317,7 +317,7 @@ Pobrano graf: 1506 wierzchołków, 3014 krawędzi.
 ![img_53.png](img_53.png)
 
 🧩 Spójność wierzchołkowa:
- - Graf niespójny → brak sensu szukać rozspajających wierzchołków.
+ - Graf niespójny → brak sensu szukać rozspajających wierzchołków. -->
 
 # Pagerank
 
@@ -400,3 +400,34 @@ Top 5 stron:
  - Regresja log-log: y ~ x^-1.67, R² = 0.868
 
 ![img_60.png](img_60.png)
+
+<!-- # Testy na wątkach - 1000 stron
+
+--- Test: 1 wątków ---
+Crawling: 100%|██████████| 1000/1000 [48:32<00:00,  2.91s/it]
+Page limit reached, and threads finished. Exiting.
+
+--- Test: 2 wątków ---
+Crawling: 100%|██████████| 1000/1000 [22:53<00:00,  1.37s/it]
+Page limit reached, and threads finished. Exiting.
+
+--- Test: 4 wątków ---
+Crawling: 100%|██████████| 1000/1000 [12:11<00:00,  1.37it/s]
+Page limit reached, and threads finished. Exiting.
+
+--- Test: 8 wątków ---
+Crawling: 1001it [08:36,  1.94it/s]
+Page limit reached, and threads finished. Exiting.
+
+--- Test: 16 wątków ---
+Crawling: 100%|██████████| 1000/1000 [06:27<00:00,  2.58it/s]
+Page limit reached, and threads finished. Exiting.
+
+Wyniki:
+1 wątków → 2912.54s, 1000 wierzchołków, 55208 krawędzi
+2 wątków → 1373.82s, 1000 wierzchołków, 54778 krawędzi
+4 wątków → 731.47s, 1000 wierzchołków, 54684 krawędzi
+8 wątków → 516.76s, 1001 wierzchołków, 53075 krawędzi
+16 wątków → 387.61s, 1000 wierzchołków, 54182 krawędzi
+
+![img_61.png](img_61.png) -->

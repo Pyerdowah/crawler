@@ -2,7 +2,7 @@ import requests
 import os
 import hashlib
 
-def download_page(url, save_dir="data/html"):
+def download_page(url, save_dir="data2/html"):
     try:
         response = requests.get(url, timeout=5)
         if response.status_code == 200 and 'text/html' in response.headers.get('Content-Type', ''):

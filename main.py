@@ -1,5 +1,5 @@
 import time
-
+import matplotlib.pyplot as plt
 from graph.builder import build_graph, simulate_failure, simulate_attack
 import pickle
 import networkx as nx
@@ -27,12 +27,29 @@ def test_on_threads(base_url, max_pages=200, thread_options=[1, 2, 4, 8, 16]):
 
     return results
 
-# url = "https://www.um.edu.mt/"
+def plot_thread_times(results):
+    threads = [r[0] for r in results]
+    times = [r[1] for r in results]
+
+    plt.figure(figsize=(8, 5))
+    plt.bar(threads, times, color='skyblue')
+    plt.xlabel("Liczba wątków")
+    plt.ylabel("Czas działania (s)")
+    plt.title("Czas crawlowania w zależności od liczby wątków")
+    plt.xticks(threads)
+    plt.grid(axis='y', linestyle='--', alpha=0.7)
+    plt.tight_layout()
+    plt.show()
+
+url = "https://www.um.edu.mt/"
 # G = build_graph(url, max_pages=3000, num_threads=16)
 # time.sleep(10)
 # print(f"Pobrano graf: {G.number_of_nodes()} wierzchołków, {G.number_of_edges()} krawędzi.")
-with open("data/graph.gpickle", "rb") as f:
-    G = pickle.load(f)
+# with open("data/graph.gpickle", "rb") as f:
+#     G = pickle.load(f)
+
+results = test_on_threads(url, max_pages=1000)
+plot_thread_times(results)
 
 # for remove_frac in [0.1, 0.3, 0.5]:
 #     F = simulate_failure(G, remove_frac=remove_frac)
@@ -51,12 +68,12 @@ with open("data/graph.gpickle", "rb") as f:
 #     analyze_vertex_connectivity(A)
 
 # 1. PageRank bez tłumienia
-pr1 = custom_pagerank(G, d=1.0)
-analyze_pagerank_distribution(pr1, "PageRank bez tłumienia")
-
-# 2. PageRank z tłumieniem
-pr2 = custom_pagerank(G, d=0.85)
-analyze_pagerank_distribution(pr2, "PageRank z tłumieniem d=0.85")
-
-# 3. Zbieżność dla wielu wartości
-pagerank_convergence_study(G, d_values=[0.6, 0.75, 0.85, 0.95, 1.0])
+# pr1 = custom_pagerank(G, d=1.0)
+# analyze_pagerank_distribution(pr1, "PageRank bez tłumienia")
+#
+# # 2. PageRank z tłumieniem
+# pr2 = custom_pagerank(G, d=0.85)
+# analyze_pagerank_distribution(pr2, "PageRank z tłumieniem d=0.85")
+#
+# # 3. Zbieżność dla wielu wartości
+# pagerank_convergence_study(G, d_values=[0.6, 0.75, 0.85, 0.95, 1.0])
