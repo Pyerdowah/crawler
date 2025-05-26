@@ -42,14 +42,14 @@ def plot_thread_times(results):
     plt.show()
 
 url = "https://www.um.edu.mt/"
-# G = build_graph(url, max_pages=3000, num_threads=16)
-# time.sleep(10)
-# print(f"Pobrano graf: {G.number_of_nodes()} wierzchołków, {G.number_of_edges()} krawędzi.")
+G = build_graph(url, max_pages=3000, num_threads=16)
+time.sleep(10)
+print(f"Pobrano graf: {G.number_of_nodes()} wierzchołków, {G.number_of_edges()} krawędzi.")
 # with open("data/graph.gpickle", "rb") as f:
 #     G = pickle.load(f)
 
-results = test_on_threads(url, max_pages=1000)
-plot_thread_times(results)
+# results = test_on_threads(url, max_pages=1000)
+# plot_thread_times(results)
 
 # for remove_frac in [0.1, 0.3, 0.5]:
 #     F = simulate_failure(G, remove_frac=remove_frac)

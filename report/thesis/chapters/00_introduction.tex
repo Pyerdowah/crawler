@@ -34,7 +34,7 @@ Zaimplementowany crawler działa w oparciu o architekturę kolejki zadań i dyna
 
 \section{Wielowątkowość}
 
-Crawler został uruchomiony z różną liczbą wątków: 1, 2, 4, 8 i 16, gdzie liczba odwiedzonych stron została ustawiona na przynajmniej 1000. Testy na wątkach przeprowadzono na mniejszej liczbie wierzchołków ze względu na czas działania programu, dla 3000 stron przedstawiałyby się one podobnie. Dla każdej konfiguracji zmierzono czas działania, a także zarejestrowano liczbę odwiedzonych wierzchołków i zbudowanych krawędzi w grafie.
+Crawler został uruchomiony z różną liczbą wątków: 1, 2, 4, 8 i 16, gdzie liczba odwiedzonych stron została ustawiona na przynajmniej 1000. Testy na wątkach przeprowadzono na mniejszej liczbie wierzchołków ze względu na czas działania programu, dla 3000 stron przedstawiałyby się one wizualnie podobnie. Dla każdej konfiguracji zmierzono czas działania, a także zarejestrowano liczbę odwiedzonych wierzchołków i zbudowanych krawędzi w grafie.
 
 \begin{table}[H]
 \centering
@@ -64,7 +64,7 @@ Crawler został uruchomiony z różną liczbą wątków: 1, 2, 4, 8 i 16, gdzie 
 \begin{itemize}
     \item Zauważalny jest wyraźny spadek czasu działania wraz ze wzrostem liczby wątków. Przejście z 1 do 2 wątków skróciło czas ponad dwukrotnie.
     
-    \item Kolejne wzrosty liczby wątków również przynoszą korzyści, jednak zgodnie z prawem malejących przychodów, różnice te stają się coraz mniejsze (np. różnica między 8 a 16 wątkami to tylko 129 s).
+    \item Kolejne wzrosty liczby wątków również przynoszą korzyści, różnice te stają się coraz mniejsze (np. różnica między 8 a 16 wątkami to tylko 129 s).
     
     \item Dla testu z 16 wątkami osiągnięto średnią prędkość pobierania około 0{,}39 sekundy na stronę.
 \end{itemize}

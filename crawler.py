@@ -112,7 +112,8 @@ class WebCrawler:
                 if link not in self.visited:
                     self.queue.put(link)
                 else:
-                    self.graph.add_edge(url, link)
+                    if url != link:
+                        self.graph.add_edge(url, link)
 
         self.working_threads.decrement()
         self.awake()

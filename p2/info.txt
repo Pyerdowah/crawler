@@ -1,0 +1,9 @@
+Celem jest analiza semantyczna zbioru dokumentów tekstowych, aby pogrupować je w naturalne klastry lub przypisać
+ do określonych kategorii na podstawie ich treści.
+ Należy  zaimplementować jedną z metod analizy semantycznej
+ oraz dokonać analizy jakości grupowania/kategoryzacji. Grupowanie / klastryzację należy poddać ocenie w stosunku
+ do wyniku analizy strukturalnej (wybrać reprezentatywne parametry grafowe i poddać ocenie uzyskane podziały).
+ Należy zaimplementować jedną z metod: Metoda LSI (grupowanie)
+
+ link do sprawozdania:
+ https://docs.google.com/document/d/1AgyxSdoxNTC_TWJiT_NNK4OU7HaX4-Cl/edit?usp=sharing&ouid=103140035213914394374&rtpof=true&sd=true
