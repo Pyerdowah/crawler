@@ -1,19 +1,21 @@
 import os
-import re
 import numpy as np
 import matplotlib.pyplot as plt
 import networkx as nx
 
 from bs4 import BeautifulSoup
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.decomposition import TruncatedSVD
+from sklearn.decomposition import TruncatedSVD, PCA
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score, calinski_harabasz_score, davies_bouldin_score
-from sklearn.decomposition import PCA
 from sklearn.metrics.pairwise import cosine_similarity
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
+from collections import defaultdict
+import matplotlib.cm as cm
+
+# ------------------------ Loading and Preprocessing ------------------------
 
 def load_html_documents(folder_path):
     docs = []
@@ -21,7 +23,6 @@ def load_html_documents(folder_path):
         if filename.endswith(".html"):
             with open(os.path.join(folder_path, filename), 'r', encoding='utf-8', errors='ignore') as f:
                 soup = BeautifulSoup(f.read(), 'html.parser')
-                # Extract main text (skip scripts/styles)
                 for tag in soup(["script", "style"]):
                     tag.decompose()
                 text = soup.get_text(separator=' ', strip=True)
@@ -38,6 +39,8 @@ def preprocess(text):
     tokens = [lemmatizer.lemmatize(t) for t in tokens]
     return " ".join(tokens)
 
+# ------------------------ Vectorization and LSI ------------------------
+
 def vectorize_tfidf(docs):
     tfidf_vectorizer = TfidfVectorizer(max_df=0.9, min_df=5)
     X_tfidf = tfidf_vectorizer.fit_transform(docs)
@@ -48,8 +51,9 @@ def apply_lsi(X_tfidf, n_components=100):
     X_lsi = svd.fit_transform(X_tfidf)
     return X_lsi, svd
 
+# ------------------------ Clustering ------------------------
 
-def cluster_docs(X_lsi, n_clusters=5):
+def cluster_docs(X_lsi, n_clusters):
     kmeans = KMeans(n_clusters=n_clusters, random_state=42)
     labels = kmeans.fit_predict(X_lsi)
     return labels, kmeans
@@ -58,10 +62,36 @@ def evaluate_clustering(X, labels):
     sil = silhouette_score(X, labels)
     ch = calinski_harabasz_score(X, labels)
     db = davies_bouldin_score(X, labels)
-    print(f"Silhouette Score: {sil:.3f}")
-    print(f"Calinski-Harabasz Index: {ch:.2f}")
-    print(f"Davies-Bouldin Index: {db:.2f}")
+    return sil, ch, db
 
+def test_multiple_k_values(X_lsi, k_range=range(2, 11)):
+    sil_scores, ch_scores, db_scores = [], [], []
+    for k in k_range:
+        labels, _ = cluster_docs(X_lsi, n_clusters=k)
+        sil, ch, db = evaluate_clustering(X_lsi, labels)
+        sil_scores.append(sil)
+        ch_scores.append(ch)
+        db_scores.append(db)
+        print(f"k={k}: Sil={sil:.3f}, CH={ch:.1f}, DB={db:.2f}")
+
+    plt.figure(figsize=(12, 6))
+    plt.plot(k_range, sil_scores, marker='o', label='Silhouette Score')
+    plt.plot(k_range, ch_scores, marker='x', label='Calinski-Harabasz')
+    plt.plot(k_range, db_scores, marker='s', label='Davies-Bouldin (lower better)')
+    plt.xlabel("Number of Clusters (k)")
+    plt.ylabel("Score (log scale)")
+    plt.yscale('log')
+    plt.title("KMeans Evaluation Metrics vs. k (Log Scale)")
+    plt.legend()
+    plt.grid(True, which='both', linestyle='--', linewidth=0.5)
+    plt.tight_layout()
+    plt.show()
+
+    best_k = k_range[np.argmax(sil_scores)]
+    print(f"\n✅ Best k based on Silhouette Score: {best_k}")
+    return best_k
+
+# ------------------------ Graph and Centrality ------------------------
 
 def build_similarity_graph(X_tfidf, threshold=0.2):
     similarity = cosine_similarity(X_tfidf)
@@ -75,69 +105,99 @@ def build_similarity_graph(X_tfidf, threshold=0.2):
 def analyze_graph(G):
     pr = nx.pagerank(G)
     deg_cent = nx.degree_centrality(G)
-    print("Top 5 PageRank nodes:", sorted(pr.items(), key=lambda x: x[1], reverse=True)[:5])
-    print("Top 5 Degree Centrality nodes:", sorted(deg_cent.items(), key=lambda x: x[1], reverse=True)[:5])
+    print("\n🏅 Top 5 PageRank:", sorted(pr.items(), key=lambda x: x[1], reverse=True)[:5])
     return pr, deg_cent
 
+# ------------------------ Visualizations ------------------------
 
 def visualize_clusters(X_lsi, labels):
     pca = PCA(n_components=2)
     X_2d = pca.fit_transform(X_lsi)
     plt.figure(figsize=(10, 6))
     plt.scatter(X_2d[:, 0], X_2d[:, 1], c=labels, cmap='tab10')
-    plt.title("LSI + KMeans Clustering Visualization")
-    plt.xlabel("PCA Component 1")
-    plt.ylabel("PCA Component 2")
+    plt.title("LSI + KMeans Clustering")
+    plt.xlabel("PCA 1")
+    plt.ylabel("PCA 2")
     plt.colorbar(label="Cluster")
     plt.grid(True)
     plt.show()
 
-def pagerank_vs_clusters(pr_scores, kmeans_labels):
-    print("\n📊 PageRank vs KMeans Clusters:")
-    top_nodes = sorted(pr_scores.items(), key=lambda x: x[1], reverse=True)[:5]
-    for i, (node_id, score) in enumerate(top_nodes):
-        cluster_id = kmeans_labels[node_id]
-        print(f"Top {i+1}: Doc {node_id}, PageRank={score:.6f}, Cluster={cluster_id}")
-
-def visualize_graph_clusters(G, labels, title="Graph colored by KMeans clusters"):
-    import matplotlib.cm as cm
-    pos = nx.spring_layout(G, seed=42, k=0.15)  # układ grafu
-
+def visualize_graph_clusters(G, labels):
+    pos = nx.spring_layout(G, seed=42)
     unique_clusters = list(set(labels))
-    colors = cm.get_cmap('tab10', len(unique_clusters))
-
+    cmap = cm.get_cmap('tab10', len(unique_clusters))
     plt.figure(figsize=(10, 8))
-    for cluster_id in unique_clusters:
-        nodes = [i for i in G.nodes if labels[i] == cluster_id]
-        nx.draw_networkx_nodes(G, pos, nodelist=nodes, node_color=[colors(cluster_id)],
-                               label=f"Cluster {cluster_id}", node_size=50, alpha=0.8)
-
+    for cid in unique_clusters:
+        nodes = [n for n in G.nodes if labels[n] == cid]
+        nx.draw_networkx_nodes(G, pos, nodelist=nodes, node_color=[cmap(cid)],
+                               label=f"Cluster {cid}", node_size=50, alpha=0.8)
     nx.draw_networkx_edges(G, pos, alpha=0.1)
-    plt.title(title)
-    plt.axis('off')
+    plt.title("Similarity Graph Colored by Cluster")
     plt.legend()
+    plt.axis('off')
     plt.show()
 
+# ------------------------ Cluster + Graph Analysis ------------------------
+
+def pagerank_vs_clusters(pr, labels):
+    print("\n📌 PageRank vs Clusters:")
+    for i, (node, score) in enumerate(sorted(pr.items(), key=lambda x: x[1], reverse=True)[:5]):
+        print(f"  Doc {node}: PageRank={score:.4f}, Cluster={labels[node]}")
+
+def analyze_pagerank_by_cluster(pr_scores, labels):
+    cluster_pr = defaultdict(list)
+    for node, score in pr_scores.items():
+        cluster = labels[node]
+        cluster_pr[cluster].append((node, score))
+
+    print("\n📊 PageRank – średnie i top 3 w każdym klastrze:")
+    for cluster, scores in sorted(cluster_pr.items()):
+        scores_sorted = sorted(scores, key=lambda x: x[1], reverse=True)
+        avg = np.mean([s for _, s in scores])
+        max_score = scores_sorted[0][1]
+        print(f"\n🔹 Cluster {cluster}:")
+        print(f"   Średni PageRank: {avg:.6f}, Maksymalny: {max_score:.6f}, Liczba dokumentów: {len(scores)}")
+        print("   Top 3 dokumenty:")
+        for i, (doc_id, score) in enumerate(scores_sorted[:3]):
+            print(f"     {i+1}. Doc {doc_id} – PageRank: {score:.6f}")
+
+def print_graph_statistics(G):
+    print("\n📈 Statystyki grafu podobieństw:")
+    print(f"  Wierzchołki: {G.number_of_nodes()}")
+    print(f"  Krawędzie: {G.number_of_edges()}")
+    degrees = [d for _, d in G.degree()]
+    print(f"  Średni stopień: {np.mean(degrees):.2f}")
+    print(f"  Maksymalny stopień: {np.max(degrees)}")
+    components = list(nx.connected_components(G))
+    print(f"  Składowe spójne: {len(components)}")
+    print(f"  Największa składowa: {len(max(components, key=len))}")
+
+# ------------------------ Main ------------------------
+
 def main():
-    folder_path = "../data/html"  # folder z plikami .html
+    folder_path = "../data/html"  # zmień na ścieżkę do plików .html
     raw_docs = load_html_documents(folder_path)
-    print(f"Loaded {len(raw_docs)} HTML documents.")
+    print(f"📄 Załadowano {len(raw_docs)} dokumentów.")
+    cleaned = [preprocess(doc) for doc in raw_docs]
 
-    cleaned_docs = [preprocess(doc) for doc in raw_docs]
+    X_tfidf, vectorizer = vectorize_tfidf(cleaned)
+    X_lsi, svd = apply_lsi(X_tfidf)
 
-    X_tfidf, vectorizer = vectorize_tfidf(cleaned_docs)
-    X_lsi, svd = apply_lsi(X_tfidf, n_components=100)
-
-    labels, kmeans = cluster_docs(X_lsi, n_clusters=5)
-    evaluate_clustering(X_lsi, labels)
+    best_k = test_multiple_k_values(X_lsi, k_range=range(2, 11))
+    labels, kmeans = cluster_docs(X_lsi, n_clusters=best_k)
 
     G = build_similarity_graph(X_tfidf)
     pr, deg_cent = analyze_graph(G)
 
+    sil, ch, db = evaluate_clustering(X_lsi, labels)
+    print(f"\n📊 Final Clustering (k={best_k}): Sil={sil:.3f}, CH={ch:.1f}, DB={db:.2f}")
+
     visualize_clusters(X_lsi, labels)
+    visualize_graph_clusters(G, labels)
 
     pagerank_vs_clusters(pr, labels)
-    visualize_graph_clusters(G, labels, title="Graph colored by KMeans clusters")
+    analyze_pagerank_by_cluster(pr, labels)
+    print_graph_statistics(G)
 
 if __name__ == "__main__":
     main()
